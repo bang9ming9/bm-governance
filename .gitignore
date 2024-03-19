@@ -20,5 +20,8 @@
 # Go workspace file
 go.work
 
+# bang9ming9
 package-lock.json
 node_modules
+abis
+bin
