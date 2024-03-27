@@ -6,6 +6,7 @@ import { GovernorCountingSimple } from "@openzeppelin/contracts/governance/exten
 import { IERC5805, IVotes, GovernorVotes } from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 
 interface IERC1155 is IERC5805 {
+	function delegateByOwner(address account) external;
 	function mint(address account) external;
 }
 
@@ -15,13 +16,13 @@ contract BmGovernor is Governor, GovernorCountingSimple, GovernorVotes {
 	uint256 private constant MIN_DELAY = 1 days;
 	uint256 private constant VOTING_PERIOD = ONE_WEEK - VOTE_DAY;
 
-	IERC1155 public erc1155;
+	IERC1155 public immutable BM_ERC1155;
 
 	constructor(
 		string memory name_,
 		address erc1155_
 	) Governor(name_) GovernorVotes(IVotes(erc1155_)) {
-		erc1155 = IERC1155(erc1155_);
+		BM_ERC1155 = IERC1155(erc1155_);
 	}
 
 	////////////////
@@ -43,7 +44,7 @@ contract BmGovernor is Governor, GovernorCountingSimple, GovernorVotes {
 	}
 
 	function quorum(uint256 timepoint) public view override returns (uint256) {
-		return erc1155.getPastTotalSupply(timepoint) / 10; // 10%
+		return BM_ERC1155.getPastTotalSupply(timepoint) / 10; // 10%
 	}
 
 	////////////
@@ -78,7 +79,7 @@ contract BmGovernor is Governor, GovernorCountingSimple, GovernorVotes {
 		string memory reason,
 		bytes memory params
 	) internal override returns (uint256) {
-		erc1155.mint(account);
+		BM_ERC1155.delegateByOwner(account);
 		return super._castVote(proposalId, account, support, reason, params);
 	}
 

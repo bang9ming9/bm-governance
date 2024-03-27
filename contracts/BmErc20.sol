@@ -30,7 +30,7 @@ contract BMerc20 is ERC20, ERC20Capped, ERC20Burnable {
 	}
 
 	function mint(address account) public payable {
-		if (minted[account]) revert();
+		if (minted[account]) revert("1");
 		minted[account] = true;
 
 		BM_ERC1155.sendValue(COST);

@@ -5,6 +5,7 @@ go 1.22.0
 require (
 	github.com/ethereum/go-ethereum v1.13.12
 	github.com/miguelmota/go-ethereum-hdwallet v0.1.2
+	github.com/shopspring/decimal v1.3.1
 	github.com/stretchr/testify v1.8.4
 )
 

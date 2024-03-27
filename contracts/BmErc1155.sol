@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.24;
 
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ERC1155, ERC1155Supply } from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC5805 } from "@openzeppelin/contracts/interfaces/IERC5805.sol";
@@ -13,7 +14,7 @@ import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { Time } from "@openzeppelin/contracts/utils/types/Time.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
-contract BMerc1155 is Context, ERC1155Supply, EIP712, Nonces, IERC5805 {
+contract BMerc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 {
 	using Checkpoints for Checkpoints.Trace208;
 	using Address for address payable;
 
@@ -29,6 +30,7 @@ contract BMerc1155 is Context, ERC1155Supply, EIP712, Nonces, IERC5805 {
 
 	bytes32 private constant DELEGATION_TYPEHASH =
 		keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
+	uint256 private constant ONE_WEEK = 1 weeks; // token Id 의 유효 기간
 
 	mapping(uint256 id => mapping(address account => address)) private _delegatee;
 
@@ -37,32 +39,51 @@ contract BMerc1155 is Context, ERC1155Supply, EIP712, Nonces, IERC5805 {
 
 	mapping(uint256 id => mapping(address account => uint256)) public mintedAmount;
 
-	IERC20 immutable erc20;
-	uint256 public idPeriod; // token Id 의 유효 기간
-	mapping(uint256 id => address) paid; // id가 바뀔때 최초로 토큰 함수를 실행시킨 유저. 있을지 모를 보상을 받는다.
 	address payable immutable bm; // 나의 주소, 있을지 모를 보상을 받는다.
+
+	IERC20 immutable BM_ERC20;
+	mapping(uint256 id => address) paid; // id가 바뀔때 최초로 토큰 함수를 실행시킨 유저. 있을지 모를 보상을 받는다.
 
 	constructor(
 		string memory name,
 		string memory version,
 		string memory uri_,
 		IERC20 erc20_,
-		uint256 idPeriod_
-	) EIP712(name, version) ERC1155(uri_) {
+		address governor
+	) EIP712(name, version) ERC1155(uri_) Ownable(governor) {
 		if (address(erc20_) == address(0)) revert();
-		if (idPeriod_ == 0) revert();
 
 		bm = payable(_msgSender());
-		erc20 = erc20_;
-		idPeriod = idPeriod_;
+		BM_ERC20 = erc20_;
 	}
+	receive() external payable {}
 
 	function currentID() public view returns (uint256) {
-		return clock() / idPeriod;
+		return clock() / ONE_WEEK;
 	}
 
-	function timepointID(uint256 timepoint) public view returns (uint256) {
-		return timepoint / idPeriod;
+	function timepointID(uint256 timepoint) public pure returns (uint256) {
+		return timepoint / ONE_WEEK;
+	}
+
+	function delegateByOwner(address account) external onlyOwner {
+		address oldDelegate = delegates(account);
+		if (oldDelegate != account) {
+			if (oldDelegate != address(0)) revert();
+			_delegate(account, account);
+		}
+		mint(account);
+	}
+
+	function mint(address account) public {
+		uint256 balance = BM_ERC20.balanceOf(account);
+		uint256 id = currentID();
+		mapping(address => uint256) storage _mintedAmount = mintedAmount[id];
+		uint256 amount = _mintedAmount[account];
+		if (balance > amount) {
+			_mintedAmount[account] = balance;
+			_mint(account, id, balance - amount, "");
+		}
 	}
 
 	/**
@@ -139,17 +160,6 @@ contract BMerc1155 is Context, ERC1155Supply, EIP712, Nonces, IERC5805 {
 	 */
 	function delegates(uint256 id, address account) public view returns (address) {
 		return _delegatee[id][account];
-	}
-
-	function mint(address account) external {
-		uint256 balance = erc20.balanceOf(account);
-		uint256 id = currentID();
-		mapping(address => uint256) storage _mintedAmount = mintedAmount[id];
-		uint256 amount = _mintedAmount[account];
-		if (balance > amount) {
-			_mintedAmount[account] = balance;
-			_mint(account, id, balance - amount, "");
-		}
 	}
 
 	/**

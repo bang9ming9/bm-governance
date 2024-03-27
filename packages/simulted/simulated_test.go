@@ -11,9 +11,9 @@ import (
 func TestNewBackend(t *testing.T) {
 	backend := simulated.NewBacked(t)
 	ctx := context.Background()
-	balance, err := backend.BalanceAt(ctx, backend.Owner, nil)
+	balance, err := backend.BalanceAt(ctx, backend.Owner.From, nil)
 	require.NoError(t, err)
-	t.Log(backend.Owner, "balance", balance)
+	t.Log(backend.Owner.From, "balance", balance)
 
 	eoa := simulated.GetEOA(t)
 	balance, err = backend.BalanceAt(ctx, eoa.From, nil)
