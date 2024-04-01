@@ -6,7 +6,7 @@ import { ERC20Capped } from "@openzeppelin/contracts/token/ERC20/extensions/ERC2
 import { ERC20Burnable } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
-contract BMerc20 is ERC20, ERC20Capped, ERC20Burnable {
+contract BmErc20 is ERC20, ERC20Capped, ERC20Burnable {
 	using Address for address payable;
 
 	uint256 public constant COST = 1 ether;

@@ -72,6 +72,11 @@ func (ec *Backend) TransactionReceipt(ctx context.Context, txHash common.Hash) (
 	return receipt, err
 }
 
-func (ec *Backend) Commit() {
-	ec.Backend.Commit()
+func (ec *Backend) EstimateGas(ctx context.Context, call ethereum.CallMsg) (uint64, error) {
+	gas, err := ec.Client.EstimateGas(ctx, call)
+	return gas, ToRevert(err)
+}
+
+func (ec *Backend) SendTransaction(ctx context.Context, tx *types.Transaction) error {
+	return ToRevert(ec.Client.SendTransaction(ctx, tx))
 }

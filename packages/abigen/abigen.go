@@ -3,14 +3,16 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
 var (
-	compiledPath string = "/home/go/src/github.com/bang9ming9/bm-governance/bin/contracts"
-	outPath      string = "/home/go/src/github.com/bang9ming9/bm-governance/abis"
+	bm_root      string = os.Getenv("BM_ROOT")
+	compiledPath string = filepath.Join(bm_root, "bm-governance/bin/contracts")
+	outPath      string = filepath.Join(bm_root, "bm-governance/abis")
 )
 
 var ContractsName = flag.String("contracts", "", "")

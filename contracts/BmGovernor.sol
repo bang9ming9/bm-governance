@@ -6,6 +6,7 @@ import { GovernorCountingSimple } from "@openzeppelin/contracts/governance/exten
 import { IERC5805, IVotes, GovernorVotes } from "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 
 interface IERC1155 is IERC5805 {
+	function getVotes(address account) external view returns (uint256);
 	function delegateByOwner(address account) external;
 	function mint(address account) external;
 }
@@ -61,14 +62,19 @@ contract BmGovernor is Governor, GovernorCountingSimple, GovernorVotes {
 		bytes[] memory calldatas,
 		string memory description
 	) public override returns (uint256) {
+		address proposer = _msgSender();
+
+		BM_ERC1155.delegateByOwner(proposer);
 		uint256 proposalId = super.propose(targets, values, calldatas, description);
-		_castVote(
+
+		_countVote(
 			proposalId,
-			_msgSender(),
+			proposer,
 			uint8(VoteType.Abstain),
-			"proposer",
-			_defaultParams()
+			BM_ERC1155.getVotes(proposer),
+			"proposer"
 		);
+
 		return proposalId;
 	}
 
@@ -80,6 +86,7 @@ contract BmGovernor is Governor, GovernorCountingSimple, GovernorVotes {
 		bytes memory params
 	) internal override returns (uint256) {
 		BM_ERC1155.delegateByOwner(account);
+
 		return super._castVote(proposalId, account, support, reason, params);
 	}
 
@@ -90,7 +97,7 @@ contract BmGovernor is Governor, GovernorCountingSimple, GovernorVotes {
 		uint256 weight,
 		bytes memory params
 	) internal override(Governor, GovernorCountingSimple) {
-		if (weight == 0) revert();
+		if (weight == 0) revert("zero weight");
 		return
 			GovernorCountingSimple._countVote(
 				proposalId,

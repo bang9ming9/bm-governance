@@ -8,14 +8,12 @@ import { IERC5805 } from "@openzeppelin/contracts/interfaces/IERC5805.sol";
 import { Context } from "@openzeppelin/contracts/utils/Context.sol";
 import { Nonces } from "@openzeppelin/contracts/utils/Nonces.sol";
 import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import { Checkpoints } from "@openzeppelin/contracts/utils/structs/Checkpoints.sol";
 import { SafeCast } from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { Time } from "@openzeppelin/contracts/utils/types/Time.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
-contract BMerc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 {
-	using Checkpoints for Checkpoints.Trace208;
+contract BmErc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 {
 	using Address for address payable;
 
 	/**
@@ -34,7 +32,7 @@ contract BMerc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 
 
 	mapping(uint256 id => mapping(address account => address)) private _delegatee;
 
-	mapping(uint256 id => mapping(address delegatee => Checkpoints.Trace208))
+	mapping(uint256 id => mapping(address delegatee => uint208))
 		private _delegateCheckpoints;
 
 	mapping(uint256 id => mapping(address account => uint256)) public mintedAmount;
@@ -67,12 +65,14 @@ contract BMerc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 
 	}
 
 	function delegateByOwner(address account) external onlyOwner {
-		address oldDelegate = delegates(account);
-		if (oldDelegate != account) {
-			if (oldDelegate != address(0)) revert();
-			_delegate(account, account);
-		}
 		mint(account);
+
+		address oldDelegate = delegates(account);
+		if (oldDelegate == address(0)) {
+			_delegate(account, account);
+		} else {
+			if (oldDelegate != account) revert("1");
+		}
 	}
 
 	function mint(address account) public {
@@ -110,7 +110,7 @@ contract BMerc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 
 	 * @dev Returns the current amount of votes that `account` has.
 	 */
 	function getVotes(address account) public view returns (uint256) {
-		return _delegateCheckpoints[currentID()][account].latest();
+		return _delegateCheckpoints[currentID()][account];
 	}
 
 	/**
@@ -125,14 +125,11 @@ contract BMerc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 
 		address account,
 		uint256 timepoint
 	) public view returns (uint256) {
-		uint48 currentTimepoint = clock();
-		if (timepoint >= currentTimepoint) {
-			revert ERC5805FutureLookup(timepoint, currentTimepoint);
+		(uint256 id, uint256 tid) = (currentID(), timepointID(timepoint));
+		if (tid > id) {
+			revert ERC5805FutureLookup(timepoint, clock());
 		}
-		return
-			_delegateCheckpoints[timepointID(timepoint)][account].upperLookupRecent(
-				SafeCast.toUint48(timepoint)
-			);
+		return _delegateCheckpoints[tid][account];
 	}
 
 	/**
@@ -141,9 +138,9 @@ contract BMerc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 
 	 * - `timepoint` must be in the past. If operating using block numbers, the block must be already mined.
 	 */
 	function getPastTotalSupply(uint256 timepoint) public view returns (uint256) {
-		uint48 currentTimepoint = clock();
-		if (timepoint >= currentTimepoint) {
-			revert ERC5805FutureLookup(timepoint, currentTimepoint);
+		(uint256 id, uint256 tid) = (currentID(), timepointID(timepoint));
+		if (tid > id) {
+			revert ERC5805FutureLookup(timepoint, clock());
 		}
 		return totalSupply(timepointID(timepoint));
 	}
@@ -210,31 +207,34 @@ contract BMerc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 
 	 */
 	function _delegate(address account, address delegatee) internal {
 		address oldDelegate = delegates(account);
-		_delegatee[currentID()][account] = delegatee;
 
-		emit DelegateChanged(account, oldDelegate, delegatee);
 		_moveDelegateVotes(oldDelegate, delegatee, _getVotingUnits(account));
+		emit DelegateChanged(account, oldDelegate, delegatee);
+
+		_delegatee[currentID()][account] = delegatee;
 	}
 
 	/**
 	 * @dev Moves delegated votes from one delegate to another.
 	 */
 	function _moveDelegateVotes(address from, address to, uint256 amount) private {
-		mapping(address delegatee => Checkpoints.Trace208)
+		mapping(address delegatee => uint208)
 			storage _delegateCheckpoints_ = _delegateCheckpoints[currentID()];
 
 		if (from != to && amount > 0) {
 			if (from != address(0)) {
-				(uint256 oldValue, uint256 newValue) = _push(
-					_delegateCheckpoints_[from],
+				(uint208 oldValue, uint208 newValue) = _updateCheckpoints(
+					_delegateCheckpoints_,
+					from,
 					_subtract,
 					SafeCast.toUint208(amount)
 				);
 				emit DelegateVotesChanged(from, oldValue, newValue);
 			}
 			if (to != address(0)) {
-				(uint256 oldValue, uint256 newValue) = _push(
-					_delegateCheckpoints_[to],
+				(uint208 oldValue, uint208 newValue) = _updateCheckpoints(
+					_delegateCheckpoints_,
+					to,
 					_add,
 					SafeCast.toUint208(amount)
 				);
@@ -243,30 +243,14 @@ contract BMerc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 
 		}
 	}
 
-	/**
-	 * @dev Get number of checkpoints for `account`.
-	 */
-	function _numCheckpoints(address account) internal view returns (uint32) {
-		return
-			SafeCast.toUint32(_delegateCheckpoints[currentID()][account].length());
-	}
-
-	/**
-	 * @dev Get the `pos`-th checkpoint for `account`.
-	 */
-	function _checkpoints(
+	function _updateCheckpoints(
+		mapping(address delegatee => uint208) storage store,
 		address account,
-		uint32 pos
-	) internal view returns (Checkpoints.Checkpoint208 memory) {
-		return _delegateCheckpoints[currentID()][account].at(pos);
-	}
-
-	function _push(
-		Checkpoints.Trace208 storage store,
 		function(uint208, uint208) view returns (uint208) op,
 		uint208 delta
-	) private returns (uint208, uint208) {
-		return store.push(clock(), op(store.latest(), delta));
+	) private returns (uint208 oldValue, uint208 newValue) {
+		oldValue = store[account];
+		newValue = store[account] = op(oldValue, delta);
 	}
 
 	function _add(uint208 a, uint208 b) private pure returns (uint208) {
@@ -298,6 +282,7 @@ contract BMerc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 
 			if (id == id_) {
 				// 있을지 모를 보상을 나와, 트랜잭션을 실행시킨 유저에게 준다. (_msgSender 이기대문에 유저가 아니라 컨트랙트 일 수 있다.)
 				if (paid[id] == address(0)) _pay(id_, _msgSender());
+
 				// 현재 id 라면 투표권 에 영향을 준다.
 				_moveDelegateVotes(
 					delegates(id_, from),
