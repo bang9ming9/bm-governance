@@ -65,7 +65,7 @@ func DeployBMGovernor(t *testing.T, backend Backend) *BmGovernor {
 
 	txs := make([]*types.Transaction, 0)
 
-	erc20, tx, ERC20, err := abis.DeployBmERC20(owner, backend, "Bang9Ming9 Governance TOKEN", "BM20", erc1155Address)
+	erc20, tx, ERC20, err := abis.DeployBmERC20(owner, backend, "Bang9Ming9 Governance TOKEN", "BM20", erc1155Address, governorAddress)
 	require.NoError(t, err)
 	require.Equal(t, erc20Address, erc20)
 	txs = append(txs, tx)
@@ -236,18 +236,18 @@ func (bm *BmGovernor) NextProposalTime(t *testing.T, backend interface {
 	backend.Commit()
 }
 
-func (bm *BmGovernor) ProposalVoteTime(t *testing.T, backend interface {
+func (bm *BmGovernor) ToProposalSnapshotTime(t *testing.T, backend interface {
 	AdjustTime(adjustment time.Duration) error
 	Commit() common.Hash
-}) {
-	callClock, err := bm.erc1155.Clock(callOpts)
+}, proposalID *big.Int) {
+	clock, err := bm.erc1155.Clock(callOpts)
 	require.NoError(t, err)
-	clock := callClock.Int64()
-	clock = (clock - (clock % ONE_WEEK)) + VOTE_DAY
-	if diff := clock - callClock.Int64(); diff > 0 {
+	start, err := bm.governor.ProposalSnapshot(callOpts, proposalID)
+	require.NoError(t, err)
+	if diff := new(big.Int).Sub(start, clock).Int64(); diff > 0 {
 		require.NoError(t, backend.AdjustTime(time.Duration(diff)))
+		backend.Commit()
 	}
-	backend.Commit()
 }
 
 type voteType struct {
@@ -257,3 +257,21 @@ type voteType struct {
 }
 
 var VoteType = voteType{0, 1, 2}
+
+type proposalState struct {
+	Pending   uint8
+	Active    uint8
+	Canceled  uint8
+	Defeated  uint8
+	Succeeded uint8
+	Queued    uint8
+	Expired   uint8
+	Execute   uint8
+}
+
+var ProposalState = proposalState{0, 1, 2, 3, 4, 5, 6, 7}
+var (
+	WIN_CLAIM     = utils.ToWei(0.5)
+	LOSE_CLAIM    = utils.ToWei(0.1)
+	ABSTAIN_CLAIM = utils.ToWei(0.2)
+)

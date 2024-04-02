@@ -194,13 +194,6 @@ contract BmErc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 
 	}
 
 	/**
-	 * @dev Returns the current total supply of votes.
-	 */
-	function _getTotalSupply() internal view returns (uint256) {
-		return totalSupply(currentID());
-	}
-
-	/**
 	 * @dev Delegate all of `account`'s voting units to `delegatee`.
 	 *
 	 * Emits events {IVotes-DelegateChanged} and {IVotes-DelegateVotesChanged}.
@@ -259,6 +252,13 @@ contract BmErc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 
 
 	function _subtract(uint208 a, uint208 b) private pure returns (uint208) {
 		return a - b;
+	}
+
+	/**
+	 * @dev Returns the current total supply of votes.
+	 */
+	function _getTotalSupply() internal view returns (uint256) {
+		return totalSupply(currentID());
 	}
 
 	/**

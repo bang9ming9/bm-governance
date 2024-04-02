@@ -18,6 +18,7 @@ contract BmGovernor is Governor, GovernorCountingSimple, GovernorVotes {
 	uint256 private constant VOTING_PERIOD = ONE_WEEK - VOTE_DAY;
 
 	IERC1155 public immutable BM_ERC1155;
+	mapping(uint256 proposalID => mapping(address account => uint8)) proposalSupported;
 
 	constructor(
 		string memory name_,
@@ -51,6 +52,19 @@ contract BmGovernor is Governor, GovernorCountingSimple, GovernorVotes {
 	////////////
 	// CUSTOM //
 	////////////
+
+	function proposalStateToClaim(
+		uint256 proposalID,
+		address account
+	)
+		external
+		view
+		returns (bool hasVoted_, uint8 supported, ProposalState state_)
+	{
+		hasVoted_ = hasVoted(proposalID, account);
+		supported = proposalSupported[proposalID][account];
+		state_ = state(proposalID);
+	}
 
 	function proposalThreshold() public pure override returns (uint256) {
 		return 1 ether;
@@ -98,14 +112,14 @@ contract BmGovernor is Governor, GovernorCountingSimple, GovernorVotes {
 		bytes memory params
 	) internal override(Governor, GovernorCountingSimple) {
 		if (weight == 0) revert("zero weight");
-		return
-			GovernorCountingSimple._countVote(
-				proposalId,
-				account,
-				support,
-				weight,
-				params
-			);
+		GovernorCountingSimple._countVote(
+			proposalId,
+			account,
+			support,
+			weight,
+			params
+		);
+		proposalSupported[proposalId][account] = support;
 	}
 
 	//////////////
