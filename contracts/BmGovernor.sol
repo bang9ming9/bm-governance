@@ -12,6 +12,9 @@ interface IERC1155 is IERC5805 {
 }
 
 contract BmGovernor is Governor, GovernorCountingSimple, GovernorVotes {
+	error BmGovernorIsNotPropoalTime();
+	error BmGovernorZeroWeight(address account);
+
 	uint256 private constant ONE_WEEK = 1 weeks;
 	uint256 private constant VOTE_DAY = 4 days;
 	uint256 private constant MIN_DELAY = 1 days;
@@ -36,7 +39,7 @@ contract BmGovernor is Governor, GovernorCountingSimple, GovernorVotes {
 			uint256 now_ = block.timestamp;
 			uint256 day_ = now_ - (now_ % ONE_WEEK) + VOTE_DAY;
 
-			if (day_ < now_ + MIN_DELAY) revert();
+			if (day_ < now_ + MIN_DELAY) revert BmGovernorIsNotPropoalTime();
 			return day_ - now_;
 		}
 	}
@@ -79,21 +82,21 @@ contract BmGovernor is Governor, GovernorCountingSimple, GovernorVotes {
 		address proposer = _msgSender();
 
 		BM_ERC1155.delegateByOwner(proposer);
-		uint256 proposalId = super.propose(targets, values, calldatas, description);
+		uint256 proposalID = super.propose(targets, values, calldatas, description);
 
 		_countVote(
-			proposalId,
+			proposalID,
 			proposer,
 			uint8(VoteType.Abstain),
 			BM_ERC1155.getVotes(proposer),
 			"proposer"
 		);
 
-		return proposalId;
+		return proposalID;
 	}
 
 	function _castVote(
-		uint256 proposalId,
+		uint256 proposalID,
 		address account,
 		uint8 support,
 		string memory reason,
@@ -101,25 +104,25 @@ contract BmGovernor is Governor, GovernorCountingSimple, GovernorVotes {
 	) internal override returns (uint256) {
 		BM_ERC1155.delegateByOwner(account);
 
-		return super._castVote(proposalId, account, support, reason, params);
+		return super._castVote(proposalID, account, support, reason, params);
 	}
 
 	function _countVote(
-		uint256 proposalId,
+		uint256 proposalID,
 		address account,
 		uint8 support,
 		uint256 weight,
 		bytes memory params
 	) internal override(Governor, GovernorCountingSimple) {
-		if (weight == 0) revert("zero weight");
+		if (weight == 0) revert BmGovernorZeroWeight(account);
 		GovernorCountingSimple._countVote(
-			proposalId,
+			proposalID,
 			account,
 			support,
 			weight,
 			params
 		);
-		proposalSupported[proposalId][account] = support;
+		proposalSupported[proposalID][account] = support;
 	}
 
 	//////////////
@@ -136,10 +139,10 @@ contract BmGovernor is Governor, GovernorCountingSimple, GovernorVotes {
 	}
 
 	function hasVoted(
-		uint256 proposalId,
+		uint256 proposalID,
 		address account
 	) public view override(IGovernor, GovernorCountingSimple) returns (bool) {
-		return GovernorCountingSimple.hasVoted(proposalId, account);
+		return GovernorCountingSimple.hasVoted(proposalID, account);
 	}
 
 	function clock()
@@ -164,18 +167,18 @@ contract BmGovernor is Governor, GovernorCountingSimple, GovernorVotes {
 	 * @dev Amount of votes already cast passes the threshold limit.
 	 */
 	function _quorumReached(
-		uint256 proposalId
+		uint256 proposalID
 	) internal view override(Governor, GovernorCountingSimple) returns (bool) {
-		return GovernorCountingSimple._quorumReached(proposalId);
+		return GovernorCountingSimple._quorumReached(proposalID);
 	}
 
 	/**
 	 * @dev Is the proposal successful or not.
 	 */
 	function _voteSucceeded(
-		uint256 proposalId
+		uint256 proposalID
 	) internal view override(Governor, GovernorCountingSimple) returns (bool) {
-		return GovernorCountingSimple._voteSucceeded(proposalId);
+		return GovernorCountingSimple._voteSucceeded(proposalID);
 	}
 
 	/**

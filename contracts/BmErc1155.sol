@@ -3,6 +3,7 @@ pragma solidity 0.8.24;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ERC1155, ERC1155Supply } from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
+import { ERC1155Burnable } from "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Burnable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IERC5805 } from "@openzeppelin/contracts/interfaces/IERC5805.sol";
 import { Context } from "@openzeppelin/contracts/utils/Context.sol";
@@ -13,8 +14,20 @@ import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { Time } from "@openzeppelin/contracts/utils/types/Time.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
-contract BmErc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 {
+contract BmErc1155 is
+	Context,
+	ERC1155,
+	ERC1155Supply,
+	ERC1155Burnable,
+	EIP712,
+	Nonces,
+	Ownable,
+	IERC5805
+{
 	using Address for address payable;
+
+	error BmErc1155NilInput(string arg);
+	error BmErcAlreadyDelegateOther(address account, address delegates);
 
 	/**
 	 * @dev The clock was incorrectly modified.
@@ -28,6 +41,7 @@ contract BmErc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 
 
 	bytes32 private constant DELEGATION_TYPEHASH =
 		keccak256("Delegation(address delegatee,uint256 nonce,uint256 expiry)");
+
 	uint256 private constant ONE_WEEK = 1 weeks; // token Id 의 유효 기간
 
 	mapping(uint256 id => mapping(address account => address)) private _delegatee;
@@ -49,7 +63,7 @@ contract BmErc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 
 		IERC20 erc20_,
 		address governor
 	) EIP712(name, version) ERC1155(uri_) Ownable(governor) {
-		if (address(erc20_) == address(0)) revert();
+		if (address(erc20_) == address(0)) revert BmErc1155NilInput("erc20_");
 
 		bm = payable(_msgSender());
 		BM_ERC20 = erc20_;
@@ -71,7 +85,8 @@ contract BmErc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 
 		if (oldDelegate == address(0)) {
 			_delegate(account, account);
 		} else {
-			if (oldDelegate != account) revert("1");
+			if (oldDelegate != account)
+				revert BmErcAlreadyDelegateOther(account, oldDelegate);
 		}
 	}
 
@@ -273,7 +288,7 @@ contract BmErc1155 is Context, ERC1155Supply, EIP712, Nonces, Ownable, IERC5805 
 		address to,
 		uint256[] memory ids,
 		uint256[] memory values
-	) internal override {
+	) internal override(ERC1155, ERC1155Supply) {
 		super._update(from, to, ids, values);
 		uint256 id = currentID();
 		uint256 length = ids.length;

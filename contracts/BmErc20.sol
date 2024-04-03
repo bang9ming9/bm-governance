@@ -20,6 +20,12 @@ interface IGovernor is OZIGovernor {
 contract BmErc20 is ERC20, ERC20Capped, ERC20Burnable {
 	using Address for address payable;
 
+	error BmErc20NilInput(string arg);
+	error BmErc20AlreadyMintedUser(address account);
+	error BmErc20AlreadyClaimed(uint256 proposalID, address account);
+	error BmErc20NotVoteUser(uint256 proposalID, address account);
+	error BmErc20InvalidProposalState(uint256 proposalID, uint8 state);
+
 	event Minted(address indexed account);
 	event Claimed(
 		uint256 indexed proposalID,
@@ -44,8 +50,8 @@ contract BmErc20 is ERC20, ERC20Capped, ERC20Burnable {
 		address payable erc1155,
 		address governor
 	) ERC20(name, symbol) ERC20Capped(type(uint208).max) {
-		if (erc1155 == address(0)) revert();
-		if (governor == address(0)) revert();
+		if (erc1155 == address(0)) revert BmErc20NilInput("erc1155");
+		if (governor == address(0)) revert BmErc20NilInput("governor");
 		BM_ERC1155 = erc1155;
 		BM_GOVERNOR = IGovernor(governor);
 	}
@@ -59,7 +65,7 @@ contract BmErc20 is ERC20, ERC20Capped, ERC20Burnable {
 	}
 
 	function mint(address account) public payable {
-		if (minted[account]) revert("1");
+		if (minted[account]) revert BmErc20AlreadyMintedUser(account);
 		minted[account] = true;
 
 		BM_ERC1155.sendValue(COST);
@@ -69,14 +75,15 @@ contract BmErc20 is ERC20, ERC20Capped, ERC20Burnable {
 
 	function claim(uint256 proposalID, address account) external {
 		// 1. 중복 보상 확인
-		if (claimed[proposalID][account]) revert();
+		if (claimed[proposalID][account])
+			revert BmErc20AlreadyClaimed(proposalID, account);
 		(
 			bool hasVoted,
 			uint8 supported,
 			OZIGovernor.ProposalState state
 		) = BM_GOVERNOR.proposalStateToClaim(proposalID, account);
 		// 2. 투표한 유저인지 확인
-		if (!hasVoted) revert();
+		if (!hasVoted) revert BmErc20NotVoteUser(proposalID, account);
 		// 3/ 결과에 따른 지급 보상
 		uint256 claimAmount;
 		/*
@@ -102,7 +109,7 @@ contract BmErc20 is ERC20, ERC20Capped, ERC20Burnable {
 				claimAmount = supported == 0 ? WIN_CLAIM : LOSE_CLAIM;
 			} else {
 				// 이외의 상태는 정료 처리
-				revert();
+				revert BmErc20InvalidProposalState(proposalID, uint8(state));
 			}
 		}
 		// 보상 지급
