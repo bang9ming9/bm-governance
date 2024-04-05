@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "@openzeppelin/contracts": "^5.0.1",
     "prettier": "^3.2.5",
     "prettier-plugin-solidity": "^1.3.1"
   }
