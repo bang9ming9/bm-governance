@@ -84,7 +84,7 @@ contract BmErc20 is ERC20, ERC20Capped, ERC20Burnable {
 		) = BM_GOVERNOR.proposalStateToClaim(proposalID, account);
 		// 2. 투표한 유저인지 확인
 		if (!hasVoted) revert BmErc20NotVoteUser(proposalID, account);
-		// 3/ 결과에 따른 지급 보상
+		// 3. 결과에 따른 지급 보상
 		uint256 claimAmount;
 		/*
 		 *   enum VoteType {
@@ -112,9 +112,8 @@ contract BmErc20 is ERC20, ERC20Capped, ERC20Burnable {
 				revert BmErc20InvalidProposalState(proposalID, uint8(state));
 			}
 		}
-		// 보상 지급
+		// 4. 보상 지급
 		_mint(account, claimAmount);
-		// 보상 지급 체크
 		claimed[proposalID][account] = true;
 
 		emit Claimed(proposalID, account, claimAmount);

@@ -51,7 +51,12 @@ contract BmErc1155 is
 
 	mapping(uint256 id => mapping(address account => uint256)) public mintedAmount;
 
-	address payable immutable bm; // 나의 주소, 있을지 모를 보상을 받는다.
+	/**
+	 * 나의 주소, 있을지 모를 보상을 받는다.
+	 * 보상 : BmERC20 을 민팅하게 되면 해당 수량만큼 보상으로 사용된다.
+	 *      : tokenID 가 바뀔때마다 (매주) 쌓였던 보상을 최초 실행자(90%)와 나(10%)에게 지급한다.
+	 */
+	address payable immutable bm;
 
 	IERC20 immutable BM_ERC20;
 	mapping(uint256 id => address) paid; // id가 바뀔때 최초로 토큰 함수를 실행시킨 유저. 있을지 모를 보상을 받는다.
