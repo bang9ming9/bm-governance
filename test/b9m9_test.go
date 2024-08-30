@@ -36,14 +36,14 @@ func TestDeployBMGovernorVote(t *testing.T) {
 		require.NoError(t, txs.Clear())
 		for _, eoa := range eoas[:len(eoas)/2] {
 			eoa.Value = utils.ToWei(1)
-			require.NoError(t, txs.Exec(contracts.erc20.Funcs().Mint(eoa, eoa.From)))
+			require.NoError(t, txs.Exec(contracts.Erc20.Funcs().Mint(eoa, eoa.From)))
 			eoa.Value = common.Big0
 		}
 		require.NoError(t, txs.AllReceiptStatusSuccessful(ctx))
 
 		// 3. 나머지 eoas 는 erc20 으로 Send value
 		require.NoError(t, txs.Clear())
-		to := contracts.erc20.Address()
+		to := contracts.Erc20.Address()
 		for _, eoa := range eoas[len(eoas)/2:] {
 			eoa.Value = utils.ToWei(1)
 			require.NoError(t, txs.Exec(utils.SendDynamicTx(backend, eoa, &to, []byte{})))
@@ -53,7 +53,7 @@ func TestDeployBMGovernorVote(t *testing.T) {
 
 		// 4. eoas 의 erc20 balance 확인
 		for _, eoa := range eoas {
-			balance, err := contracts.erc20.Funcs().BalanceOf(callOpts, eoa.From)
+			balance, err := contracts.Erc20.Funcs().BalanceOf(callOpts, eoa.From)
 			require.NoError(t, err)
 			require.Equal(t, utils.ToWei(1), balance)
 		}
@@ -62,7 +62,7 @@ func TestDeployBMGovernorVote(t *testing.T) {
 		// 5-1. MINT
 		require.NoError(t, txs.Clear())
 		eoa := eoas[0]
-		require.Error(t, txs.Exec(contracts.erc20.Funcs().Mint(owner, eoa.From)))
+		require.Error(t, txs.Exec(contracts.Erc20.Funcs().Mint(owner, eoa.From)))
 		// 5-2. SEND VALUE
 		require.Error(t, txs.Exec(utils.SendDynamicTx(backend, eoa, &to, []byte{})))
 	})
@@ -71,21 +71,21 @@ func TestDeployBMGovernorVote(t *testing.T) {
 		emptyEOA := bms.GetEOA(t)
 		blen := len(eoas)
 
-		currentID, err := contracts.erc1155.Funcs().CurrentID(callOpts)
+		currentID, err := contracts.Erc1155.Funcs().CurrentID(callOpts)
 		require.NoError(t, err)
 		require.False(t, currentID.Sign() == 0)
 		// 1. mint 확인
 		txs := utils.NewTxPool(backend)
 		for _, eoa := range append(eoas, emptyEOA) {
-			require.NoError(t, txs.Exec(contracts.erc1155.Funcs().Mint(eoa, eoa.From)))
+			require.NoError(t, txs.Exec(contracts.Erc1155.Funcs().Mint(eoa, eoa.From)))
 		}
 		require.NoError(t, txs.AllReceiptStatusSuccessful(ctx))
 
 		onewei := utils.ToWei(1)
 		for _, eoa := range eoas {
-			balance20, err := contracts.erc20.Funcs().BalanceOf(callOpts, eoa.From)
+			balance20, err := contracts.Erc20.Funcs().BalanceOf(callOpts, eoa.From)
 			require.NoError(t, err)
-			balance, err := contracts.erc1155.Funcs().BalanceOf(callOpts, eoa.From, currentID)
+			balance, err := contracts.Erc1155.Funcs().BalanceOf(callOpts, eoa.From, currentID)
 			require.NoError(t, err)
 			require.Equal(t, balance20, balance)
 			require.Equal(t, onewei, balance)
@@ -94,14 +94,14 @@ func TestDeployBMGovernorVote(t *testing.T) {
 		// 2. 같은 id 라면 추가 민팅은 안된다
 		require.NoError(t, txs.Clear())
 		for _, eoa := range append(eoas, emptyEOA) {
-			require.NoError(t, txs.Exec(contracts.erc1155.Funcs().Mint(eoa, eoa.From)))
+			require.NoError(t, txs.Exec(contracts.Erc1155.Funcs().Mint(eoa, eoa.From)))
 		}
 		require.Equal(t, blen, len(eoas))
 		require.NoError(t, txs.AllReceiptStatusSuccessful(ctx))
 		for _, eoa := range eoas {
-			balance20, err := contracts.erc20.Funcs().BalanceOf(callOpts, eoa.From)
+			balance20, err := contracts.Erc20.Funcs().BalanceOf(callOpts, eoa.From)
 			require.NoError(t, err)
-			balance, err := contracts.erc1155.Funcs().BalanceOf(callOpts, eoa.From, currentID)
+			balance, err := contracts.Erc1155.Funcs().BalanceOf(callOpts, eoa.From, currentID)
 			require.NoError(t, err)
 			require.Equal(t, balance20, balance)
 			require.Equal(t, onewei, balance) // 어차피 1 ether
@@ -109,27 +109,27 @@ func TestDeployBMGovernorVote(t *testing.T) {
 
 		// 3. id가 바뀌면 민팅을 한다.
 		backend.AdjustTime(time.Duration(86400 * 7)) // 1 주일을 보낸다.
-		nextCurrentId, err := contracts.erc1155.Funcs().CurrentID(callOpts)
+		nextCurrentId, err := contracts.Erc1155.Funcs().CurrentID(callOpts)
 		require.NoError(t, err)
 		require.Equal(t, new(big.Int).Add(currentID, common.Big1), nextCurrentId) // id가 1 증가하였는지 확인
 
 		require.NoError(t, txs.Clear())
 		for _, eoa := range append(eoas, emptyEOA) {
-			require.NoError(t, txs.Exec(contracts.erc1155.Funcs().Mint(eoa, eoa.From)))
+			require.NoError(t, txs.Exec(contracts.Erc1155.Funcs().Mint(eoa, eoa.From)))
 		}
 		require.Equal(t, blen, len(eoas))
 		require.NoError(t, txs.AllReceiptStatusSuccessful(ctx))
 
 		for _, eoa := range eoas {
-			balance20, err := contracts.erc20.Funcs().BalanceOf(callOpts, eoa.From)
+			balance20, err := contracts.Erc20.Funcs().BalanceOf(callOpts, eoa.From)
 			require.NoError(t, err)
 			// 이전 id 도 1 ether
-			curBalance, err := contracts.erc1155.Funcs().BalanceOf(callOpts, eoa.From, currentID)
+			curBalance, err := contracts.Erc1155.Funcs().BalanceOf(callOpts, eoa.From, currentID)
 			require.NoError(t, err)
 			require.Equal(t, balance20, curBalance)
 			require.Equal(t, onewei, curBalance)
 			// 현재 id 도 1 ether
-			nextCurBalance, err := contracts.erc1155.Funcs().BalanceOf(callOpts, eoa.From, nextCurrentId)
+			nextCurBalance, err := contracts.Erc1155.Funcs().BalanceOf(callOpts, eoa.From, nextCurrentId)
 			require.NoError(t, err)
 			require.Equal(t, balance20, nextCurBalance)
 			require.Equal(t, onewei, nextCurBalance)
@@ -155,7 +155,7 @@ func TestDeployBMGovernorProposal(t *testing.T) {
 	// TC1: Vote(ERC1155) 가 없다면 제안(Propose)할 수 없다.
 	t.Run("TC1", func(t *testing.T) {
 		proposal := contracts.NewProposalToTarget(t, "TC1", 1, common.Address{1}, common.Hash{1}, "1")
-		tx, err := contracts.governor.Funcs().Propose(backend.Owner, proposal.Targets, proposal.Values, proposal.CallDatas, proposal.Description)
+		tx, err := contracts.Governor.Funcs().Propose(backend.Owner, proposal.Targets, proposal.Values, proposal.CallDatas, proposal.Description)
 		if err == nil {
 			receipt, err := bind.WaitMined(ctx, backend, tx)
 			require.NoError(t, err)
@@ -176,35 +176,35 @@ func TestDeployBMGovernorProposal(t *testing.T) {
 
 		proposer := eoas[0]
 		// 제안자 가 투표토큰이 있는지 확인
-		balance20, err := contracts.erc20.Funcs().BalanceOf(callOpts, proposer.From)
+		balance20, err := contracts.Erc20.Funcs().BalanceOf(callOpts, proposer.From)
 		require.NoError(t, err)
 		require.Equal(t, utils.ToWei(1), balance20)
 		// 투표권 획득
-		tx, err := contracts.erc1155.Funcs().Mint(proposer, proposer.From)
+		tx, err := contracts.Erc1155.Funcs().Mint(proposer, proposer.From)
 		require.NoError(t, err)
 		receipt, err := bind.WaitMined(ctx, backend, tx)
 		require.NoError(t, err)
 		require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
-		currentID, err := contracts.erc1155.Funcs().CurrentID(callOpts)
+		currentID, err := contracts.Erc1155.Funcs().CurrentID(callOpts)
 		require.NoError(t, err)
-		balance1155, err := contracts.erc1155.Funcs().BalanceOf(callOpts, proposer.From, currentID)
+		balance1155, err := contracts.Erc1155.Funcs().BalanceOf(callOpts, proposer.From, currentID)
 		require.NoError(t, err)
 		require.Equal(t, balance20, balance1155)
 
 		// 대표자 설정
-		tx, err = contracts.erc1155.Funcs().Delegate(proposer, proposer.From)
+		tx, err = contracts.Erc1155.Funcs().Delegate(proposer, proposer.From)
 		require.NoError(t, err)
 		receipt, err = bind.WaitMined(ctx, backend, tx)
 		require.NoError(t, err)
 		require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
-		votes, err := contracts.erc1155.Funcs().GetVotes(callOpts, proposer.From)
+		votes, err := contracts.Erc1155.Funcs().GetVotes(callOpts, proposer.From)
 		require.NoError(t, err)
 		require.Equal(t, votes, balance1155)
 		backend.Commit()
 
 		// 제안 실행
 		proposal := contracts.NewProposalToTarget(t, "TC2", 1, common.Address{1}, common.Hash{1}, "1")
-		tx, err = contracts.governor.Funcs().Propose(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, proposal.Description)
+		tx, err = contracts.Governor.Funcs().Propose(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, proposal.Description)
 		require.NoError(t, err)
 		receipt, err = bind.WaitMined(ctx, backend, tx)
 		require.NoError(t, err)
@@ -219,14 +219,14 @@ func TestDeployBMGovernorProposal(t *testing.T) {
 		// TC2-1: 제안자는 투표할 수 없다. (자동 기권)
 		t.Run("TC2-1", func(t *testing.T) {
 			// 투표 실행 실패
-			_, err := contracts.governor.Funcs().CastVote(proposer, proposalId, VoteType.For)
+			_, err := contracts.Governor.Funcs().CastVote(proposer, proposalId, VoteType.For)
 			require.Error(t, err)
 
 			// 투표 확인
-			hasVotes, err := contracts.governor.Funcs().HasVoted(callOpts, proposalId, proposer.From)
+			hasVotes, err := contracts.Governor.Funcs().HasVoted(callOpts, proposalId, proposer.From)
 			require.NoError(t, err)
 			require.True(t, hasVotes)
-			cid, err := contracts.erc1155.Funcs().CurrentID(callOpts)
+			cid, err := contracts.Erc1155.Funcs().CurrentID(callOpts)
 			require.NoError(t, err)
 			require.Equal(t, currentID, cid)
 		})
@@ -236,23 +236,23 @@ func TestDeployBMGovernorProposal(t *testing.T) {
 		t.Run("TC2-2", func(t *testing.T) {
 			txs := utils.NewTxPool(backend)
 			for _, eoa := range eoas[1:] {
-				txs.Exec(contracts.governor.Funcs().CastVote(eoa, proposalId, VoteType.For))
+				txs.Exec(contracts.Governor.Funcs().CastVote(eoa, proposalId, VoteType.For))
 			}
 			require.NoError(t, txs.AllReceiptStatusSuccessful(ctx))
 
-			cid, err := contracts.erc1155.Funcs().CurrentID(callOpts)
+			cid, err := contracts.Erc1155.Funcs().CurrentID(callOpts)
 			require.NoError(t, err)
 			require.Equal(t, currentID, cid)
 			for _, eoa := range eoas {
-				delegates, err := contracts.erc1155.Funcs().Delegates(callOpts, eoa.From)
+				delegates, err := contracts.Erc1155.Funcs().Delegates(callOpts, eoa.From)
 				require.NoError(t, err)
 				require.Equal(t, eoa.From, delegates)
-				votes, err := contracts.erc1155.Funcs().GetVotes(callOpts, eoa.From)
+				votes, err := contracts.Erc1155.Funcs().GetVotes(callOpts, eoa.From)
 				require.NoError(t, err)
 				require.Equal(t, utils.ToWei(1), votes)
 			}
 
-			proposalVotes, err := contracts.governor.Funcs().ProposalVotes(callOpts, proposalId)
+			proposalVotes, err := contracts.Governor.Funcs().ProposalVotes(callOpts, proposalId)
 			require.NoError(t, err)
 			// 아무도 반대하지 않음
 			require.True(t, proposalVotes.AgainstVotes.Sign() == 0)
@@ -264,21 +264,21 @@ func TestDeployBMGovernorProposal(t *testing.T) {
 			// TC2-2-1: 중복 투표는 할수 없다.
 			t.Run("TC2-2-1", func(t *testing.T) {
 				for _, eoa := range eoas { // eoas 는 제안자를 포함하여 모두 투표를 했다.
-					_, err := contracts.governor.Funcs().CastVote(eoa, proposalId, VoteType.For)
+					_, err := contracts.Governor.Funcs().CastVote(eoa, proposalId, VoteType.For)
 					require.Error(t, err)
 				}
 			})
 			// TC2-2-2: ERC20 이 없다면 투표할 수 없다
 			t.Run("TC2-2-2", func(t *testing.T) {
 				noHolder := bms.GetEOA(t)
-				_, err := contracts.governor.Funcs().CastVote(noHolder, proposalId, VoteType.For)
+				_, err := contracts.Governor.Funcs().CastVote(noHolder, proposalId, VoteType.For)
 				require.Error(t, err)
 			})
 			// TC2-3: 찬성된 제안은 투표 기간이 지나면 실행할 수 있다.
 			// 		: 투표 기간중에는 실행할 수 없다.
 			t.Run("TC2-3", func(t *testing.T) {
 				// 투표 기간중에는 실행할 수 없다.
-				_, err := contracts.governor.Funcs().Execute(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, crypto.Keccak256Hash([]byte(proposal.Description)))
+				_, err := contracts.Governor.Funcs().Execute(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, crypto.Keccak256Hash([]byte(proposal.Description)))
 				require.Error(t, err)
 				// 실행 전 데이터 확인
 				beforeUint, err := contracts.target.Funcs().UintValue(callOpts)
@@ -287,7 +287,7 @@ func TestDeployBMGovernorProposal(t *testing.T) {
 
 				// 다음 투표 기간으로 이동
 				contracts.NextProposalTime(t, backend)
-				tx, err := contracts.governor.Funcs().Execute(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, crypto.Keccak256Hash([]byte(proposal.Description)))
+				tx, err := contracts.Governor.Funcs().Execute(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, crypto.Keccak256Hash([]byte(proposal.Description)))
 				require.NoError(t, err)
 				receipt, err := bind.WaitMined(ctx, backend, tx)
 				require.NoError(t, err)
@@ -309,7 +309,7 @@ func TestDeployBMGovernorProposal(t *testing.T) {
 
 				// TC2-3-1: 한번 실행된 제안은 두번이상 실행될 수 없다.
 				t.Run("TC2-3-1", func(t *testing.T) {
-					_, err := contracts.governor.Funcs().Execute(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, crypto.Keccak256Hash([]byte(proposal.Description)))
+					_, err := contracts.Governor.Funcs().Execute(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, crypto.Keccak256Hash([]byte(proposal.Description)))
 					require.Error(t, err)
 				})
 			})
@@ -321,7 +321,7 @@ func TestDeployBMGovernorProposal(t *testing.T) {
 		proposer := eoas[0]
 		// 제안 실행
 		proposal := contracts.NewProposalToTarget(t, "TC3", 1, common.Address{1}, common.Hash{1}, "1")
-		tx, err := contracts.governor.Funcs().Propose(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, proposal.Description)
+		tx, err := contracts.Governor.Funcs().Propose(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, proposal.Description)
 		require.NoError(t, err)
 		receipt, err := bind.WaitMined(ctx, backend, tx)
 		require.NoError(t, err)
@@ -332,34 +332,34 @@ func TestDeployBMGovernorProposal(t *testing.T) {
 	t.Run("TC4", func(t *testing.T) {
 		proposer, delegatee := eoas[0], eoas[1]
 		// 제안자 가 투표토큰이 있는지 확인
-		balance20, err := contracts.erc20.Funcs().BalanceOf(callOpts, proposer.From)
+		balance20, err := contracts.Erc20.Funcs().BalanceOf(callOpts, proposer.From)
 		require.NoError(t, err)
 		require.Equal(t, utils.ToWei(1), balance20)
 		// 투표권 획득
-		tx, err := contracts.erc1155.Funcs().Mint(proposer, proposer.From)
+		tx, err := contracts.Erc1155.Funcs().Mint(proposer, proposer.From)
 		require.NoError(t, err)
 		receipt, err := bind.WaitMined(ctx, backend, tx)
 		require.NoError(t, err)
 		require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
-		currentID, err := contracts.erc1155.Funcs().CurrentID(callOpts)
+		currentID, err := contracts.Erc1155.Funcs().CurrentID(callOpts)
 		require.NoError(t, err)
-		balance1155, err := contracts.erc1155.Funcs().BalanceOf(callOpts, proposer.From, currentID)
+		balance1155, err := contracts.Erc1155.Funcs().BalanceOf(callOpts, proposer.From, currentID)
 		require.NoError(t, err)
 		require.Equal(t, balance20, balance1155)
 
 		// 대표자 설정
-		tx, err = contracts.erc1155.Funcs().Delegate(proposer, delegatee.From)
+		tx, err = contracts.Erc1155.Funcs().Delegate(proposer, delegatee.From)
 		require.NoError(t, err)
 		receipt, err = bind.WaitMined(ctx, backend, tx)
 		require.NoError(t, err)
 		require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
-		votes, err := contracts.erc1155.Funcs().GetVotes(callOpts, proposer.From)
+		votes, err := contracts.Erc1155.Funcs().GetVotes(callOpts, proposer.From)
 		require.NoError(t, err)
 		require.True(t, votes.Sign() == 0)
 
 		// 제안 실행
 		proposal := contracts.NewProposalToTarget(t, "TC4", 1, common.Address{1}, common.Hash{1}, "1")
-		_, err = contracts.governor.Funcs().Propose(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, proposal.Description)
+		_, err = contracts.Governor.Funcs().Propose(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, proposal.Description)
 		require.Error(t, err)
 	})
 }
@@ -376,7 +376,7 @@ func TestDeployBMGovernorClaim(t *testing.T) {
 	backend, contracts := DeployBMGovernorWithBackend(t)
 	proposer := contracts.ChargeERC20(t, backend, []*bind.TransactOpts{backend.Owner})[0]
 	proposeAndVote := func(proposal *Proposal, againsts, fors, abstains []*bind.TransactOpts) *big.Int {
-		tx, err := contracts.governor.Funcs().Propose(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, proposal.Description)
+		tx, err := contracts.Governor.Funcs().Propose(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, proposal.Description)
 		require.NoError(t, err)
 		receipt, err := bind.WaitMined(ctx, backend, tx)
 		require.NoError(t, err)
@@ -388,13 +388,13 @@ func TestDeployBMGovernorClaim(t *testing.T) {
 
 		txs := utils.NewTxPool(backend)
 		for _, eoa := range againsts {
-			require.NoError(t, txs.Exec(contracts.governor.Funcs().CastVote(eoa, proposalId, VoteType.Against)))
+			require.NoError(t, txs.Exec(contracts.Governor.Funcs().CastVote(eoa, proposalId, VoteType.Against)))
 		}
 		for _, eoa := range fors {
-			require.NoError(t, txs.Exec(contracts.governor.Funcs().CastVote(eoa, proposalId, VoteType.For)))
+			require.NoError(t, txs.Exec(contracts.Governor.Funcs().CastVote(eoa, proposalId, VoteType.For)))
 		}
 		for _, eoa := range abstains {
-			require.NoError(t, txs.Exec(contracts.governor.Funcs().CastVote(eoa, proposalId, VoteType.Abstain)))
+			require.NoError(t, txs.Exec(contracts.Governor.Funcs().CastVote(eoa, proposalId, VoteType.Abstain)))
 		}
 		require.NoError(t, txs.AllReceiptStatusSuccessful(ctx))
 		contracts.NextProposalTime(t, backend)
@@ -406,7 +406,7 @@ func TestDeployBMGovernorClaim(t *testing.T) {
 		fromBlock, err := backend.BlockNumber(ctx)
 		require.NoError(t, err)
 		for _, eoa := range append(eoas, proposer) {
-			require.NoError(t, txs.Exec(contracts.erc20.Funcs().Claim(eoa, proposalID, eoa.From)))
+			require.NoError(t, txs.Exec(contracts.Erc20.Funcs().Claim(eoa, proposalID, eoa.From)))
 		}
 		require.NoError(t, txs.AllReceiptStatusSuccessful(ctx))
 
@@ -415,7 +415,7 @@ func TestDeployBMGovernorClaim(t *testing.T) {
 
 		cctx, cancel := context.WithTimeout(ctx, 5e9)
 		defer cancel()
-		iter, err := contracts.erc20.Funcs().FilterClaimed(&bind.FilterOpts{
+		iter, err := contracts.Erc20.Funcs().FilterClaimed(&bind.FilterOpts{
 			Start:   fromBlock,
 			End:     &toBlock,
 			Context: cctx,
@@ -444,7 +444,7 @@ func TestDeployBMGovernorClaim(t *testing.T) {
 			proposal := contracts.NewProposalToTarget(t, "TC1-1", "TC1-1")
 			againsts, fors, abstains := eoas[:1], eoas[1:5], eoas[5:] // 1 4 2
 			proposalID := proposeAndVote(proposal, againsts, fors, abstains)
-			state, err := contracts.governor.Funcs().State(callOpts, proposalID)
+			state, err := contracts.Governor.Funcs().State(callOpts, proposalID)
 			require.NoError(t, err)
 			require.Equal(t, ProposalState.Succeeded, state)
 			result := claim(proposalID, eoas)
@@ -464,13 +464,13 @@ func TestDeployBMGovernorClaim(t *testing.T) {
 			proposal := contracts.NewProposalToTarget(t, "TC1-2", "TC1-2")
 			againsts, fors, abstains := eoas[:1], eoas[1:5], eoas[5:] // 1 4 2
 			proposalID := proposeAndVote(proposal, againsts, fors, abstains)
-			tx, err := contracts.governor.Funcs().Execute(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, crypto.Keccak256Hash([]byte(proposal.Description)))
+			tx, err := contracts.Governor.Funcs().Execute(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, crypto.Keccak256Hash([]byte(proposal.Description)))
 			require.NoError(t, err)
 			receipt, err := bind.WaitMined(ctx, backend, tx)
 			require.NoError(t, err)
 			require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 
-			state, err := contracts.governor.Funcs().State(callOpts, proposalID)
+			state, err := contracts.Governor.Funcs().State(callOpts, proposalID)
 			require.NoError(t, err)
 			require.Equal(t, ProposalState.Execute, state)
 
@@ -495,7 +495,7 @@ func TestDeployBMGovernorClaim(t *testing.T) {
 			proposal := contracts.NewProposalToTarget(t, "TC2-1", "TC2-1")
 			againsts, fors, abstains := eoas[:4], eoas[4:5], eoas[5:] // 4 1 2
 			proposalID := proposeAndVote(proposal, againsts, fors, abstains)
-			state, err := contracts.governor.Funcs().State(callOpts, proposalID)
+			state, err := contracts.Governor.Funcs().State(callOpts, proposalID)
 			require.NoError(t, err)
 			require.Equal(t, ProposalState.Defeated, state)
 			result := claim(proposalID, eoas)
@@ -515,7 +515,7 @@ func TestDeployBMGovernorClaim(t *testing.T) {
 			proposal := contracts.NewProposalToTarget(t, "TC2-2", "TC2-2")
 			againsts, fors, abstains := eoas[:2], eoas[2:3], eoas[3:] // 2 1 4
 			proposalID := proposeAndVote(proposal, againsts, fors, abstains)
-			state, err := contracts.governor.Funcs().State(callOpts, proposalID)
+			state, err := contracts.Governor.Funcs().State(callOpts, proposalID)
 			require.NoError(t, err)
 			require.Equal(t, ProposalState.Defeated, state)
 			result := claim(proposalID, eoas)
@@ -536,7 +536,7 @@ func TestDeployBMGovernorClaim(t *testing.T) {
 		// mint erc1155
 		txs := utils.NewTxPool(backend)
 		for _, eoa := range eoas {
-			require.NoError(t, txs.Exec(contracts.erc1155.Funcs().Mint(eoa, eoa.From)))
+			require.NoError(t, txs.Exec(contracts.Erc1155.Funcs().Mint(eoa, eoa.From)))
 		}
 		require.NoError(t, txs.AllReceiptStatusSuccessful(ctx))
 
@@ -544,7 +544,7 @@ func TestDeployBMGovernorClaim(t *testing.T) {
 		// 50 명 중에 4(3 + proposer)명만 투표 (종적수는 10% 이기 때문에 5명 이상 투표를 했어야 한다.)
 		againsts, fors, abstains := eoas[:1], eoas[1:2], eoas[2:3]
 		proposalID := proposeAndVote(proposal, againsts, fors, abstains)
-		state, err := contracts.governor.Funcs().State(callOpts, proposalID)
+		state, err := contracts.Governor.Funcs().State(callOpts, proposalID)
 		require.NoError(t, err)
 		// 종적수 미달 ==> 제안 실패
 		require.Equal(t, ProposalState.Defeated, state)
@@ -562,7 +562,7 @@ func TestDeployBMGovernorClaim(t *testing.T) {
 		// TC3-1: 투표에 참여하지 않은 유저는 claim 을 할 수 없다.
 		t.Run("TC3-1", func(t *testing.T) {
 			for _, eoa := range eoas[3:] {
-				_, err := contracts.erc20.Funcs().Claim(eoa, proposalID, eoa.From)
+				_, err := contracts.Erc20.Funcs().Claim(eoa, proposalID, eoa.From)
 				require.Error(t, err)
 			}
 		})

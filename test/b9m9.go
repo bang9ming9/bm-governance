@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/bang9ming9/bm-governance/abis"
+	govTypes "github.com/bang9ming9/bm-governance/types"
 	"github.com/bang9ming9/go-hardhat/bms"
 	utils "github.com/bang9ming9/go-hardhat/bms/utils"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
@@ -24,90 +24,36 @@ var (
 )
 
 type BMGovernor struct {
-	erc20    *utils.Contract[abis.BmErc20]
-	erc1155  *utils.Contract[abis.BmErc1155]
-	governor *utils.Contract[abis.BmGovernor]
-	target   *utils.Contract[abis.TargetContract]
-}
-
-type Backend interface {
-	bind.DeployBackend
-	bind.ContractBackend
+	*govTypes.BMGovernor
+	target *utils.Contract[abis.TargetContract]
 }
 
 func DeployBMGovernorWithBackend(t *testing.T) (*bms.Backend, *BMGovernor) {
-	backend := bms.NewBacked(t)
-	contracts, err := DeployBMGovernor(backend.Owner, backend)
-	require.NoError(t, err)
-	return backend, contracts
-}
-
-func DeployBMGovernor(owner *bind.TransactOpts, backend Backend) (*BMGovernor, error) {
-	nonce, err := backend.PendingNonceAt(ctx, owner.From)
-	if err != nil {
-		return nil, errors.Wrap(err, "PendingNonceAt")
-	}
-
-	erc20Address := crypto.CreateAddress(owner.From, nonce)
-	erc1155Address := crypto.CreateAddress(owner.From, nonce+1)
-	governorAddress := crypto.CreateAddress(owner.From, nonce+2)
-
-	txpool := utils.NewTxPool(backend)
-
+	var err error
 	contracts := new(BMGovernor)
-	erc20, tx, err := utils.DeployContract(abis.DeployBmErc20(owner, backend, "", "", erc1155Address, governorAddress))
-	if err != nil {
-		return nil, errors.Wrap(err, "DeployBmErc20")
-	}
-	txpool.Append(tx)
-	erc1155, tx, err := utils.DeployContract(abis.DeployBmErc1155(owner, backend, "", "", "", erc20Address, governorAddress))
-	if err != nil {
-		return nil, errors.Wrap(err, "DeployBmErc1155")
-	}
-	txpool.Append(tx)
-	governor, tx, err := utils.DeployContract(abis.DeployBmGovernor(owner, backend, "", erc1155Address))
-	if err != nil {
-		return nil, errors.Wrap(err, "DeployBmGovernor")
-	}
-	txpool.Append(tx)
-	target, tx, err := utils.DeployContract(abis.DeployTargetContract(owner, backend, governorAddress))
-	if err != nil {
-		return nil, errors.Wrap(err, "DeployTargetContract")
-	}
-	txpool.Append(tx)
 
-	// check contract address
-	if erc20Address != erc20.Address() {
-		return nil, errors.New("invalid erc20 address")
-	} else if erc1155Address != erc1155.Address() {
-		return nil, errors.New("invalid erc1155 address")
-	} else if governorAddress != governor.Address() {
-		return nil, errors.New("invalid governor address")
-	}
+	backend := bms.NewBacked(t)
+	contracts.BMGovernor, err = govTypes.DeployBMGovernor(context.Background(), backend.Owner, backend,
+		struct {
+			Name   string
+			Symbol string
+		}{"", ""},
+		struct {
+			Name    string
+			Version string
+			Uri     string
+		}{"", "", ""}, struct{ Name string }{""},
+	)
+	require.NoError(t, err)
 
-	// check transaction receipts
-	if receipts, err := txpool.WaitMined(ctx); err != nil {
-		return nil, errors.New("WaitMined")
-	} else {
-		for _, receipt := range receipts {
-			if receipt.Status != types.ReceiptStatusSuccessful {
-				return nil, errors.New("deploy failed")
-			}
-		}
-	}
+	target, _, err := utils.DeployContract(abis.DeployTargetContract(backend.Owner, backend, contracts.BMGovernor.Governor.Address()))
+	require.NoError(t, err)
+	backend.Commit()
 
-	// set abis
-	if contracts.erc20, err = erc20.SetABIWithError(abis.BmErc20MetaData.GetAbi()); err != nil {
-		return nil, errors.Wrap(err, "abis.BmErc20MetaData.GetAbi")
-	} else if contracts.erc1155, err = erc1155.SetABIWithError(abis.BmErc1155MetaData.GetAbi()); err != nil {
-		return nil, errors.Wrap(err, "abis.BmErc1155MetaData.GetAbi")
-	} else if contracts.governor, err = governor.SetABIWithError(abis.BmGovernorMetaData.GetAbi()); err != nil {
-		return nil, errors.Wrap(err, "abis.BmGovernorMetaData.GetAbi")
-	} else if contracts.target, err = target.SetABIWithError(abis.TargetContractMetaData.GetAbi()); err != nil {
-		return nil, errors.Wrap(err, "abis.TargetContractMetaData.GetAbi")
-	}
+	contracts.target, err = target.SetABIWithError(abis.TargetContractMetaData.GetAbi())
+	require.NoError(t, err)
 
-	return contracts, nil
+	return backend, contracts
 }
 
 type Proposal struct {
@@ -158,12 +104,12 @@ func (bm *BMGovernor) NewProposalToTarget(t *testing.T, desc string, values ...i
 	}
 }
 
-func (bm *BMGovernor) ChargeERC20(t *testing.T, backend Backend, eoas []*bind.TransactOpts) []*bind.TransactOpts {
+func (bm *BMGovernor) ChargeERC20(t *testing.T, backend utils.Backend, eoas []*bind.TransactOpts) []*bind.TransactOpts {
 	txpool := utils.NewTxPool(backend)
 	owner := bms.GetOwner(t)
 	owner.Value = utils.ToWei(1)
 	for _, eoa := range eoas {
-		require.NoError(t, txpool.Exec(bm.erc20.Funcs().Mint(owner, eoa.From)))
+		require.NoError(t, txpool.Exec(bm.Erc20.Funcs().Mint(owner, eoa.From)))
 	}
 	owner.Value = common.Big0
 
@@ -177,7 +123,7 @@ func (bm *BMGovernor) ChargeERC20(t *testing.T, backend Backend, eoas []*bind.Tr
 }
 
 func (bm *BMGovernor) UnpackProposalCreated(t *testing.T, receipt *types.Receipt) *abis.BmGovernorProposalCreated {
-	events, err := utils.UnpackEvents[abis.BmGovernorProposalCreated](bm.governor.ABI(), "ProposalCreated", receipt)
+	events, err := utils.UnpackEvents[abis.BmGovernorProposalCreated](bm.Governor.ABI(), "ProposalCreated", receipt)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(events))
 	return events[0]
@@ -194,7 +140,7 @@ func (bm *BMGovernor) NextProposalTime(t *testing.T, backend interface {
 	AdjustTime(adjustment time.Duration) error
 	Commit() common.Hash
 }) {
-	callClock, err := bm.erc1155.Funcs().Clock(callOpts)
+	callClock, err := bm.Erc1155.Funcs().Clock(callOpts)
 	require.NoError(t, err)
 	clock := callClock.Int64()
 	clock = (clock - (clock % ONE_WEEK)) + ONE_WEEK
@@ -206,9 +152,9 @@ func (bm *BMGovernor) ToProposalSnapshotTime(t *testing.T, backend interface {
 	AdjustTime(adjustment time.Duration) error
 	Commit() common.Hash
 }, proposalID *big.Int) {
-	clock, err := bm.erc1155.Funcs().Clock(callOpts)
+	clock, err := bm.Erc1155.Funcs().Clock(callOpts)
 	require.NoError(t, err)
-	start, err := bm.governor.Funcs().ProposalSnapshot(callOpts, proposalID)
+	start, err := bm.Governor.Funcs().ProposalSnapshot(callOpts, proposalID)
 	require.NoError(t, err)
 	if diff := new(big.Int).Sub(start, clock).Int64(); diff > 0 {
 		require.NoError(t, backend.AdjustTime(time.Duration(diff)))

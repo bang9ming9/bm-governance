@@ -60,8 +60,8 @@ github.com/allegro/bigcache v1.2.1-0.20190218064605-e24eb225f156 h1:eMwmnE/GDgah
 github.com/allegro/bigcache v1.2.1-0.20190218064605-e24eb225f156/go.mod h1:Cb/ax3seSYIx7SuZdm2G2xzfwmv3TPSk2ucNfQESPXM=
 github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6/go.mod h1:grANhF5doyWs3UAsr3K4I6qtAmlQcZDesFNEHPZAzj8=
 github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible/go.mod h1:osfaiScAUVup+UC9Nfq76eWqDhXlp+4UYaA8uhTBO6g=
-github.com/bang9ming9/go-hardhat v0.2.1 h1:zUGCOx7Qys2NDsoT0z9RQQpHyvAG+ygin0kR36v1Xt8=
-github.com/bang9ming9/go-hardhat v0.2.1/go.mod h1:u8QF7ClEsGgKSWIhLX4q4pwZn5eYmxFtMQ0LNEFKAfE=
+github.com/bang9ming9/go-hardhat v0.2.2 h1:h0KsvxKxwKe3/JCn0+CCHMQZLGJQRdNEDTLvaDIoW9M=
+github.com/bang9ming9/go-hardhat v0.2.2/go.mod h1:u8QF7ClEsGgKSWIhLX4q4pwZn5eYmxFtMQ0LNEFKAfE=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=
