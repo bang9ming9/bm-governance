@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"time"
 
 	"github.com/bang9ming9/bm-governance/abis"
 	utils "github.com/bang9ming9/go-hardhat/bms/utils"
@@ -20,7 +21,7 @@ type BMGovernor struct {
 func DeployBMGovernor(
 	ctx context.Context,
 	owner *bind.TransactOpts,
-	backend utils.Backend,
+	backend utils.Backend, timeout time.Duration,
 	erc20Config struct {
 		Name, Symbol string
 	},
@@ -41,6 +42,9 @@ func DeployBMGovernor(
 	governorAddress := crypto.CreateAddress(owner.From, nonce+2)
 
 	txpool := utils.NewTxPool(backend)
+	if timeout != 0 {
+		txpool.SetTimeout(timeout)
+	}
 
 	contracts := new(BMGovernor)
 	erc20, tx, err := utils.DeployContract(abis.DeployBmErc20(owner, backend, erc20Config.Name, erc20Config.Symbol, erc1155Address, governorAddress))

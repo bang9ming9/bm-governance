@@ -33,7 +33,7 @@ func DeployBMGovernorWithBackend(t *testing.T) (*bms.Backend, *BMGovernor) {
 	contracts := new(BMGovernor)
 
 	backend := bms.NewBacked(t)
-	contracts.BMGovernor, err = govTypes.DeployBMGovernor(context.Background(), backend.Owner, backend,
+	contracts.BMGovernor, err = govTypes.DeployBMGovernor(context.Background(), backend.Owner, backend, 0,
 		struct {
 			Name   string
 			Symbol string
