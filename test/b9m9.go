@@ -25,7 +25,7 @@ var (
 
 type BMGovernor struct {
 	*govTypes.BMGovernor
-	target *utils.Contract[abis.TargetContract]
+	Target *utils.Contract[abis.TargetContract]
 }
 
 func DeployBMGovernorWithBackend(t *testing.T) (*bms.Backend, *BMGovernor) {
@@ -50,7 +50,7 @@ func DeployBMGovernorWithBackend(t *testing.T) (*bms.Backend, *BMGovernor) {
 	require.NoError(t, err)
 	backend.Commit()
 
-	contracts.target, err = target.SetABIWithError(abis.TargetContractMetaData.GetAbi())
+	contracts.Target, err = target.SetABIWithError(abis.TargetContractMetaData.GetAbi())
 	require.NoError(t, err)
 
 	return backend, contracts
@@ -73,7 +73,7 @@ func (bm *BMGovernor) NewProposalToTarget(t *testing.T, desc string, values ...i
 	require.NoError(t, err)
 
 	for i, value := range values {
-		targets[i] = bm.target.Address()
+		targets[i] = bm.Target.Address()
 		zeroValues[i] = common.Big0
 		var (
 			data []byte

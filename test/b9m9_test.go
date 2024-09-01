@@ -281,7 +281,7 @@ func TestDeployBMGovernorProposal(t *testing.T) {
 				_, err := contracts.Governor.Funcs().Execute(proposer, proposal.Targets, proposal.Values, proposal.CallDatas, crypto.Keccak256Hash([]byte(proposal.Description)))
 				require.Error(t, err)
 				// 실행 전 데이터 확인
-				beforeUint, err := contracts.target.Funcs().UintValue(callOpts)
+				beforeUint, err := contracts.Target.Funcs().UintValue(callOpts)
 				require.NoError(t, err)
 				require.True(t, beforeUint.Sign() == 0)
 
@@ -294,16 +294,16 @@ func TestDeployBMGovernorProposal(t *testing.T) {
 				require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
 
 				// 실행 후 데이터 확인
-				uintValue, err := contracts.target.Funcs().UintValue(callOpts)
+				uintValue, err := contracts.Target.Funcs().UintValue(callOpts)
 				require.NoError(t, err)
 				require.Equal(t, common.Big1, uintValue)
-				addrValue, err := contracts.target.Funcs().AddrValue(callOpts)
+				addrValue, err := contracts.Target.Funcs().AddrValue(callOpts)
 				require.NoError(t, err)
 				require.Equal(t, common.Address{1}, addrValue)
-				b32Value, err := contracts.target.Funcs().B32Value(callOpts)
+				b32Value, err := contracts.Target.Funcs().B32Value(callOpts)
 				require.NoError(t, err)
 				require.Equal(t, [32]byte{1}, b32Value)
-				strValue, err := contracts.target.Funcs().StrValue(callOpts)
+				strValue, err := contracts.Target.Funcs().StrValue(callOpts)
 				require.NoError(t, err)
 				require.Equal(t, "1", strValue)
 
