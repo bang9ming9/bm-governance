@@ -14,16 +14,7 @@ import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { Time } from "@openzeppelin/contracts/utils/types/Time.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 
-contract BmErc1155 is
-	Context,
-	ERC1155,
-	ERC1155Supply,
-	ERC1155Burnable,
-	EIP712,
-	Nonces,
-	Ownable,
-	IERC5805
-{
+contract BmErc1155 is Context, ERC1155, ERC1155Supply, ERC1155Burnable, EIP712, Nonces, Ownable, IERC5805 {
 	using Address for address payable;
 
 	error BmErc1155NilInput(string arg);
@@ -46,8 +37,7 @@ contract BmErc1155 is
 
 	mapping(uint256 id => mapping(address account => address)) private _delegatee;
 
-	mapping(uint256 id => mapping(address delegatee => uint208))
-		private _delegateCheckpoints;
+	mapping(uint256 id => mapping(address delegatee => uint208)) private _delegateCheckpoints;
 
 	mapping(uint256 id => mapping(address account => uint256)) public mintedAmount;
 
@@ -90,8 +80,7 @@ contract BmErc1155 is
 		if (oldDelegate == address(0)) {
 			_delegate(account, account);
 		} else {
-			if (oldDelegate != account)
-				revert BmErcAlreadyDelegateOther(account, oldDelegate);
+			if (oldDelegate != account) revert BmErcAlreadyDelegateOther(account, oldDelegate);
 		}
 	}
 
@@ -141,10 +130,7 @@ contract BmErc1155 is
 	 *
 	 * - `timepoint` must be in the past. If operating using block numbers, the block must be already mined.
 	 */
-	function getPastVotes(
-		address account,
-		uint256 timepoint
-	) public view returns (uint256) {
+	function getPastVotes(address account, uint256 timepoint) public view returns (uint256) {
 		(uint256 id, uint256 tid) = (currentID(), timepointID(timepoint));
 		if (tid > id) {
 			revert ERC5805FutureLookup(timepoint, clock());
@@ -202,9 +188,7 @@ contract BmErc1155 is
 			revert VotesExpiredSignature(expiry);
 		}
 		address signer = ECDSA.recover(
-			_hashTypedDataV4(
-				keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry))
-			),
+			_hashTypedDataV4(keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry))),
 			v,
 			r,
 			s
@@ -231,8 +215,9 @@ contract BmErc1155 is
 	 * @dev Moves delegated votes from one delegate to another.
 	 */
 	function _moveDelegateVotes(address from, address to, uint256 amount) private {
-		mapping(address delegatee => uint208)
-			storage _delegateCheckpoints_ = _delegateCheckpoints[currentID()];
+		mapping(address delegatee => uint208) storage _delegateCheckpoints_ = _delegateCheckpoints[
+			currentID()
+		];
 
 		if (from != to && amount > 0) {
 			if (from != address(0)) {
@@ -304,11 +289,7 @@ contract BmErc1155 is
 				if (paid[id] == address(0)) _pay(id_, _msgSender());
 
 				// 현재 id 라면 투표권 에 영향을 준다.
-				_moveDelegateVotes(
-					delegates(id_, from),
-					delegates(id_, to),
-					values[i]
-				);
+				_moveDelegateVotes(delegates(id_, from), delegates(id_, to), values[i]);
 			}
 			unchecked {
 				++i;

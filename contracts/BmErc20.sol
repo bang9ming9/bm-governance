@@ -11,10 +11,7 @@ interface IGovernor is OZIGovernor {
 	function proposalStateToClaim(
 		uint256 proposalID,
 		address account
-	)
-		external
-		view
-		returns (bool hasVoted, uint8 supported, OZIGovernor.ProposalState state);
+	) external view returns (bool hasVoted, uint8 supported, OZIGovernor.ProposalState state);
 }
 
 contract BmErc20 is ERC20, ERC20Capped, ERC20Burnable {
@@ -26,7 +23,6 @@ contract BmErc20 is ERC20, ERC20Capped, ERC20Burnable {
 	error BmErc20NotVoteUser(uint256 proposalID, address account);
 	error BmErc20InvalidProposalState(uint256 proposalID, uint8 state);
 
-	event Minted(address indexed account);
 	event Claimed(
 		uint256 indexed proposalID,
 		address indexed account,
@@ -70,18 +66,15 @@ contract BmErc20 is ERC20, ERC20Capped, ERC20Burnable {
 
 		BM_ERC1155.sendValue(COST);
 		_mint(account, COST);
-		emit Minted(account);
 	}
 
 	function claim(uint256 proposalID, address account) external {
 		// 1. 중복 보상 확인
-		if (claimed[proposalID][account])
-			revert BmErc20AlreadyClaimed(proposalID, account);
-		(
-			bool hasVoted,
-			uint8 supported,
-			OZIGovernor.ProposalState state
-		) = BM_GOVERNOR.proposalStateToClaim(proposalID, account);
+		if (claimed[proposalID][account]) revert BmErc20AlreadyClaimed(proposalID, account);
+		(bool hasVoted, uint8 supported, OZIGovernor.ProposalState state) = BM_GOVERNOR.proposalStateToClaim(
+			proposalID,
+			account
+		);
 		// 2. 투표한 유저인지 확인
 		if (!hasVoted) revert BmErc20NotVoteUser(proposalID, account);
 		// 3. 결과에 따른 지급 보상
@@ -99,8 +92,7 @@ contract BmErc20 is ERC20, ERC20Capped, ERC20Burnable {
 			claimAmount = ABSTAIN_CLAIM;
 		} else {
 			if (
-				state == OZIGovernor.ProposalState.Executed ||
-				state == OZIGovernor.ProposalState.Succeeded
+				state == OZIGovernor.ProposalState.Executed || state == OZIGovernor.ProposalState.Succeeded
 			) {
 				// 3-2 제안이 성공한 경우 For 가 위너
 				claimAmount = supported == 1 ? WIN_CLAIM : LOSE_CLAIM;
@@ -119,11 +111,7 @@ contract BmErc20 is ERC20, ERC20Capped, ERC20Burnable {
 		emit Claimed(proposalID, account, claimAmount);
 	}
 
-	function _update(
-		address from,
-		address to,
-		uint256 value
-	) internal virtual override(ERC20, ERC20Capped) {
+	function _update(address from, address to, uint256 value) internal virtual override(ERC20, ERC20Capped) {
 		super._update(from, to, value);
 	}
 }
