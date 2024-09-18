@@ -16,8 +16,8 @@ contract Faucet {
 
 	receive() external payable {}
 
-	function claim() external {
-		address account = msg.sender;
+	function claim(address account) external {
+		if (account == address(0)) account = msg.sender;
 		uint256 time = block.timestamp / FAUCET_INTERVAL;
 
 		if (_claimed[account] == time) revert AlreadyClaimed(account);

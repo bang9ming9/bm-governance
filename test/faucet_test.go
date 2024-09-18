@@ -7,7 +7,7 @@ import (
 
 	"github.com/bang9ming9/bm-governance/abis"
 	"github.com/bang9ming9/go-hardhat/bms"
-	utils "github.com/bang9ming9/go-hardhat/bms/utils"
+	utils "github.com/bang9ming9/go-hardhat/bms/bmsutils"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
@@ -27,12 +27,12 @@ func TestFaucet(t *testing.T) {
 	require.NoError(t, txpool.AllReceiptStatusSuccessful(ctx))
 
 	require.NotNil(t, FAUCET)
-	testers := bms.GetEOAs(t, 2)
+	testers := bms.GetTEoas(t, 2)
 
 	// TC1: FAUCET 에 보유한 코인이 없다면 지급할 수 없다.
 	t.Run("TC1", func(t *testing.T) {
 		for _, tester := range testers {
-			require.Error(t, txpool.Exec(FAUCET.Claim(tester)))
+			require.Error(t, txpool.Exec(FAUCET.Claim(tester, tester.From)))
 		}
 		require.NoError(t, txpool.Clear())
 	})
@@ -47,7 +47,7 @@ func TestFaucet(t *testing.T) {
 	t.Run("TC2", func(t *testing.T) {
 		// claim 신청
 		for _, tester := range testers {
-			require.NoError(t, txpool.Exec(FAUCET.Claim(tester)))
+			require.NoError(t, txpool.Exec(FAUCET.Claim(tester, tester.From)))
 		}
 		require.NoError(t, txpool.AllReceiptStatusSuccessful(ctx))
 
@@ -65,18 +65,18 @@ func TestFaucet(t *testing.T) {
 
 		// claim 재신청 (실패 확인)
 		for _, tester := range testers {
-			require.Error(t, txpool.Exec(FAUCET.Claim(tester)))
+			require.Error(t, txpool.Exec(FAUCET.Claim(tester, tester.From)))
 		}
 		require.NoError(t, txpool.Clear())
 
 		// 하루 시간 보낸뒤 claim 신청
 		require.NoError(t, backend.AdjustTime(86400))
 		// - tester[0] 은 지급을 받을 수 있따.
-		require.NoError(t, txpool.Exec(FAUCET.Claim(testers[0])))
+		require.NoError(t, txpool.Exec(FAUCET.Claim(testers[0], testers[0].From)))
 		require.NoError(t, txpool.AllReceiptStatusSuccessful(ctx))
 		// - tester[1:] 은 컨트랙트에 코인이 부족하여 지급 받을 수 없다.
 		for _, tester := range testers[1:] {
-			require.Error(t, txpool.Exec(FAUCET.Claim(tester)))
+			require.Error(t, txpool.Exec(FAUCET.Claim(tester, tester.From)))
 		}
 		require.NoError(t, txpool.Clear())
 		for i, tester := range testers {

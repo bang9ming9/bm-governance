@@ -98,3 +98,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
+
+replace github.com/bang9ming9/go-hardhat v0.2.3 => ../go-hardhat

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/bang9ming9/bm-governance/abis"
-	utils "github.com/bang9ming9/go-hardhat/bms/utils"
+	utils "github.com/bang9ming9/go-hardhat/bms/bmsutils"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"

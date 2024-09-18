@@ -10,7 +10,7 @@ import (
 	"github.com/bang9ming9/bm-governance/abis"
 	govTypes "github.com/bang9ming9/bm-governance/types"
 	"github.com/bang9ming9/go-hardhat/bms"
-	utils "github.com/bang9ming9/go-hardhat/bms/utils"
+	utils "github.com/bang9ming9/go-hardhat/bms/bmsutils"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -106,7 +106,7 @@ func (bm *BMGovernor) NewProposalToTarget(t *testing.T, desc string, values ...i
 
 func (bm *BMGovernor) ChargeERC20(t *testing.T, backend utils.Backend, eoas []*bind.TransactOpts) []*bind.TransactOpts {
 	txpool := utils.NewTxPool(backend)
-	owner := bms.GetOwner(t)
+	owner := bms.GetTOwner(t)
 	owner.Value = utils.ToWei(1)
 	for _, eoa := range eoas {
 		require.NoError(t, txpool.Exec(bm.Erc20.Funcs().Mint(owner, eoa.From)))

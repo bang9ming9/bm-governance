@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/bang9ming9/go-hardhat/bms"
-	utils "github.com/bang9ming9/go-hardhat/bms/utils"
+	utils "github.com/bang9ming9/go-hardhat/bms/bmsutils"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -19,7 +19,7 @@ import (
 // TC2 : ERC20 으로 ERC1155 가 정상적으로 mint 되는지 확인
 func TestDeployBMGovernorVote(t *testing.T) {
 	backend, contracts := DeployBMGovernorWithBackend(t)
-	eoas := bms.GetEOAs(t, 10)
+	eoas := bms.GetTEoas(t, 10)
 	// TC1 : ERC20 을 정상적으로 얻을 수 있는지 확인
 	t.Run("TC1", func(t *testing.T) {
 		// 1. eoas 에게 코인들 넉넉하게 전송한다.
@@ -68,7 +68,7 @@ func TestDeployBMGovernorVote(t *testing.T) {
 	})
 	// TC2 : ERC20 으로 ERC1155 가 정상적으로 mint 되는지 확인
 	t.Run("TC2", func(t *testing.T) {
-		emptyEOA := bms.GetEOA(t)
+		emptyEOA := bms.GetTEoa(t)
 		blen := len(eoas)
 
 		currentID, err := contracts.Erc1155.Funcs().CurrentID(callOpts)
@@ -150,7 +150,7 @@ func TestDeployBMGovernorVote(t *testing.T) {
 /* TC4: 대표자(delegatee)를 다른 유저로 설정하였다면 제안할 수 없다. */
 func TestDeployBMGovernorProposal(t *testing.T) {
 	backend, contracts := DeployBMGovernorWithBackend(t)
-	eoas := contracts.ChargeERC20(t, backend, bms.GetEOAs(t, 5))
+	eoas := contracts.ChargeERC20(t, backend, bms.GetTEoas(t, 5))
 
 	// TC1: Vote(ERC1155) 가 없다면 제안(Propose)할 수 없다.
 	t.Run("TC1", func(t *testing.T) {
@@ -270,7 +270,7 @@ func TestDeployBMGovernorProposal(t *testing.T) {
 			})
 			// TC2-2-2: ERC20 이 없다면 투표할 수 없다
 			t.Run("TC2-2-2", func(t *testing.T) {
-				noHolder := bms.GetEOA(t)
+				noHolder := bms.GetTEoa(t)
 				_, err := contracts.Governor.Funcs().CastVote(noHolder, proposalId, VoteType.For)
 				require.Error(t, err)
 			})
@@ -440,7 +440,7 @@ func TestDeployBMGovernorClaim(t *testing.T) {
 		contracts.NextProposalTime(t, backend)
 		// TC1-1: 찬성 > 기권 > 반대 (state == Successed)
 		t.Run("TC1-1", func(t *testing.T) {
-			eoas := contracts.ChargeERC20(t, backend, bms.GetEOAs(t, 7))
+			eoas := contracts.ChargeERC20(t, backend, bms.GetTEoas(t, 7))
 			proposal := contracts.NewProposalToTarget(t, "TC1-1", "TC1-1")
 			againsts, fors, abstains := eoas[:1], eoas[1:5], eoas[5:] // 1 4 2
 			proposalID := proposeAndVote(proposal, againsts, fors, abstains)
@@ -460,7 +460,7 @@ func TestDeployBMGovernorClaim(t *testing.T) {
 		})
 		// TC1-2: 기권 > 찬성 > 반대 (state == Execute)
 		t.Run("TC1-2", func(t *testing.T) {
-			eoas := contracts.ChargeERC20(t, backend, bms.GetEOAs(t, 7))
+			eoas := contracts.ChargeERC20(t, backend, bms.GetTEoas(t, 7))
 			proposal := contracts.NewProposalToTarget(t, "TC1-2", "TC1-2")
 			againsts, fors, abstains := eoas[:1], eoas[1:5], eoas[5:] // 1 4 2
 			proposalID := proposeAndVote(proposal, againsts, fors, abstains)
@@ -491,7 +491,7 @@ func TestDeployBMGovernorClaim(t *testing.T) {
 	t.Run("TC2", func(t *testing.T) {
 		// TC2-1: 반대 > 기권 > 찬성
 		t.Run("TC2-1", func(t *testing.T) {
-			eoas := contracts.ChargeERC20(t, backend, bms.GetEOAs(t, 7))
+			eoas := contracts.ChargeERC20(t, backend, bms.GetTEoas(t, 7))
 			proposal := contracts.NewProposalToTarget(t, "TC2-1", "TC2-1")
 			againsts, fors, abstains := eoas[:4], eoas[4:5], eoas[5:] // 4 1 2
 			proposalID := proposeAndVote(proposal, againsts, fors, abstains)
@@ -511,7 +511,7 @@ func TestDeployBMGovernorClaim(t *testing.T) {
 		})
 		// TC2-2: 기권 > 반대 > 찬성
 		t.Run("TC2-2", func(t *testing.T) {
-			eoas := contracts.ChargeERC20(t, backend, bms.GetEOAs(t, 7))
+			eoas := contracts.ChargeERC20(t, backend, bms.GetTEoas(t, 7))
 			proposal := contracts.NewProposalToTarget(t, "TC2-2", "TC2-2")
 			againsts, fors, abstains := eoas[:2], eoas[2:3], eoas[3:] // 2 1 4
 			proposalID := proposeAndVote(proposal, againsts, fors, abstains)
@@ -532,7 +532,7 @@ func TestDeployBMGovernorClaim(t *testing.T) {
 	})
 	// TC3: 종적수 미달 (ERC1155 는 많지만 투표 참여를 안함) 은 실패
 	t.Run("TC3", func(t *testing.T) {
-		eoas := contracts.ChargeERC20(t, backend, bms.GetEOAs(t, 50))
+		eoas := contracts.ChargeERC20(t, backend, bms.GetTEoas(t, 50))
 		// mint erc1155
 		txs := utils.NewTxPool(backend)
 		for _, eoa := range eoas {

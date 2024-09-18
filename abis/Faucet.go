@@ -31,8 +31,8 @@ var (
 
 // FaucetMetaData contains all meta data concerning the Faucet contract.
 var FaucetMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"AddressInsufficientBalance\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"AlreadyClaimed\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"FailedInnerCall\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Claimed\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"AMOUNT\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"FAUCET_INTERVAL\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"claim\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
-	Bin: "0x608060405234801561000f575f80fd5b506102448061001d5f395ff3fe608060405260043610610036575f3560e01c80634e71d92d146100415780636df62cef14610057578063d17891761461007f575f80fd5b3661003d57005b5f80fd5b34801561004c575f80fd5b5061005561009a565b005b348015610062575f80fd5b5061006d6201518081565b60405190815260200160405180910390f35b34801561008a575f80fd5b5061006d678ac7230489e8000081565b335f6100a962015180426101ef565b6001600160a01b0383165f908152602081905260409020549091508190036100f457604051632058b6db60e01b81526001600160a01b03831660048201526024015b60405180910390fd5b6001600160a01b0382165f81815260208190526040902082905561012090678ac7230489e80000610157565b6040516001600160a01b038316907fb449c24d261a59627b537c8c41c57ab559f4205c56bea745ff61c5521bece214905f90a25050565b8047101561017a5760405163cd78605960e01b81523060048201526024016100eb565b5f826001600160a01b0316826040515f6040518083038185875af1925050503d805f81146101c3576040519150601f19603f3d011682016040523d82523d5f602084013e6101c8565b606091505b50509050806101ea57604051630a12f52160e11b815260040160405180910390fd5b505050565b5f8261020957634e487b7160e01b5f52601260045260245ffd5b50049056fea2646970667358221220f045d1074f2ff54adbd1d6c7a5040a75130504e954275f5d2c4c72b62992401e64736f6c63430008180033",
+	ABI: "[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"AddressInsufficientBalance\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"AlreadyClaimed\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"FailedInnerCall\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Claimed\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"AMOUNT\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"FAUCET_INTERVAL\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"claim\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
+	Bin: "0x608060405234801561000f575f80fd5b5061028c8061001d5f395ff3fe608060405260043610610036575f3560e01c80631e83409a146100415780636df62cef14610062578063d17891761461008a575f80fd5b3661003d57005b5f80fd5b34801561004c575f80fd5b5061006061005b36600461020a565b6100a5565b005b34801561006d575f80fd5b506100786201518081565b60405190815260200160405180910390f35b348015610095575f80fd5b50610078678ac7230489e8000081565b6001600160a01b0381166100b65750335b5f6100c46201518042610237565b6001600160a01b0383165f9081526020819052604090205490915081900361010f57604051632058b6db60e01b81526001600160a01b03831660048201526024015b60405180910390fd5b6001600160a01b0382165f81815260208190526040902082905561013b90678ac7230489e80000610172565b6040516001600160a01b038316907fb449c24d261a59627b537c8c41c57ab559f4205c56bea745ff61c5521bece214905f90a25050565b804710156101955760405163cd78605960e01b8152306004820152602401610106565b5f826001600160a01b0316826040515f6040518083038185875af1925050503d805f81146101de576040519150601f19603f3d011682016040523d82523d5f602084013e6101e3565b606091505b505090508061020557604051630a12f52160e11b815260040160405180910390fd5b505050565b5f6020828403121561021a575f80fd5b81356001600160a01b0381168114610230575f80fd5b9392505050565b5f8261025157634e487b7160e01b5f52601260045260245ffd5b50049056fea2646970667358221220f36399db1829d3478a75796846041ae8d3dae3a7b05bfa8abf54fe0ecbe013ee64736f6c63430008180033",
 }
 
 // FaucetABI is the input ABI used to generate the binding from.
@@ -264,25 +264,25 @@ func (_Faucet *FaucetCallerSession) FAUCETINTERVAL() (*big.Int, error) {
 	return _Faucet.Contract.FAUCETINTERVAL(&_Faucet.CallOpts)
 }
 
-// Claim is a paid mutator transaction binding the contract method 0x4e71d92d.
+// Claim is a paid mutator transaction binding the contract method 0x1e83409a.
 //
-// Solidity: function claim() returns()
-func (_Faucet *FaucetTransactor) Claim(opts *bind.TransactOpts) (*types.Transaction, error) {
-	return _Faucet.contract.Transact(opts, "claim")
+// Solidity: function claim(address account) returns()
+func (_Faucet *FaucetTransactor) Claim(opts *bind.TransactOpts, account common.Address) (*types.Transaction, error) {
+	return _Faucet.contract.Transact(opts, "claim", account)
 }
 
-// Claim is a paid mutator transaction binding the contract method 0x4e71d92d.
+// Claim is a paid mutator transaction binding the contract method 0x1e83409a.
 //
-// Solidity: function claim() returns()
-func (_Faucet *FaucetSession) Claim() (*types.Transaction, error) {
-	return _Faucet.Contract.Claim(&_Faucet.TransactOpts)
+// Solidity: function claim(address account) returns()
+func (_Faucet *FaucetSession) Claim(account common.Address) (*types.Transaction, error) {
+	return _Faucet.Contract.Claim(&_Faucet.TransactOpts, account)
 }
 
-// Claim is a paid mutator transaction binding the contract method 0x4e71d92d.
+// Claim is a paid mutator transaction binding the contract method 0x1e83409a.
 //
-// Solidity: function claim() returns()
-func (_Faucet *FaucetTransactorSession) Claim() (*types.Transaction, error) {
-	return _Faucet.Contract.Claim(&_Faucet.TransactOpts)
+// Solidity: function claim(address account) returns()
+func (_Faucet *FaucetTransactorSession) Claim(account common.Address) (*types.Transaction, error) {
+	return _Faucet.Contract.Claim(&_Faucet.TransactOpts, account)
 }
 
 // Receive is a paid mutator transaction binding the contract receive function.
